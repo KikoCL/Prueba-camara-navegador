@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Captura de Foto con HTML y JavaScript</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #video {
+            width: 60%;
+            height: auto;
+        }
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Captura de Foto con HTML y JavaScript</h1>
+    <video id="video" autoplay playsinline></video>
+    <button id="capture-btn">Tomar Foto</button>
+    <canvas id="canvas"></canvas>
+    <img id="preview" alt="Vista previa de la foto capturada">
+
+    <div id="confirmation" style="display: none;">
+        <p>¿Quieres enviar esta foto?</p>
+        <button id="confirm-btn">Sí</button>
+        <button id="retake-btn">No, tomar otra</button>
+    </div>
+
+    <form id="photo-form" style="display: none;">
+        <input type="hidden" id="photo" name="photo">
+        <input type="submit" value="Enviar Foto">
+    </form>
+
+    <script>
+        // Accede al video, canvas, y otros elementos del DOM
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture-btn');
+        const photoForm = document.getElementById('photo-form');
+        const photoInput = document.getElementById('photo');
+        const preview = document.getElementById('preview');
+        const confirmation = document.getElementById('confirmation');
+        const confirmButton = document.getElementById('confirm-btn');
+        const retakeButton = document.getElementById('retake-btn');
+
+        // Obtén acceso a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Acceso a la cámara denegado', err);
+            });
+
+        // Captura una foto al tocar el botón
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convierte la foto en formato base64
+            const dataURI = canvas.toDataURL('image/png');
+
+            // Muestra la foto en la vista previa
+            preview.src = dataURI;
+            preview.style.display = 'block';
+            confirmation.style.display = 'block';
+            video.style.display = 'none';
+            captureButton.style.display = 'none';
+
+            // Guarda la foto en un campo oculto del formulario
+            photoInput.value = dataURI;
+        });
+
+         // Maneja la confirmación de la foto
+         confirmButton.addEventListener('click', () => {
+            photoForm.style.display = 'block';
+            photoForm.submit();
+        });
+
+        // Maneja la opción de volver a tomar la foto
+        retakeButton.addEventListener('click', () => {
+            preview.style.display = 'none';
+            confirmation.style.display = 'none';
+            video.style.display = 'block';
+            captureButton.style.display = 'block';
+        });
+
+        // Prevenir el comportamiento por defecto del formulario
+        photoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(photoForm);
+            // Aquí puedes manejar el envío del formulario
+            // Por ejemplo, enviar los datos a un servidor usando fetch
+            fetch('YOUR_SERVER_URL', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
